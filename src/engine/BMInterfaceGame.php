@@ -11,6 +11,8 @@
  */
 
 class BMInterfaceGame extends BMInterface {
+    const RANDOM_BUTTON_VALUE = -999;
+
     /**
      * Create a game
      *
@@ -32,25 +34,58 @@ class BMInterfaceGame extends BMInterface {
         $previousGameId = NULL,
         $currentPlayerId = NULL,
         $autoAccept = TRUE,
-        array $customRecipeArray = array()
+        array $customRecipeArray = array(),
+        $tournamentId = NULL,
+        $tournamentRoundNumber = NULL
     ) {
-        $isValidInfo =
-            $this->validate_game_info(
-                $playerIdArray,
-                $maxWins,
-                $previousGameId,
-                $buttonNameArray,
-                $customRecipeArray
-            );
+        $isValidInfo = $this->validate_game_info(
+            $playerIdArray,
+            $maxWins,
+            $previousGameId,
+            $buttonNameArray,
+            $customRecipeArray
+        );
         if (!$isValidInfo) {
             return NULL;
         }
 
         $buttonIdArray = $this->retrieve_button_ids($playerIdArray, $buttonNameArray);
-        if (is_null($buttonIdArray)) {
+        // check that the first button has been specified
+        if (is_null($buttonIdArray) || empty($buttonIdArray[0])) {
+            $this->set_message("The first button needs to be set.");
             return NULL;
         }
 
+        $result = $this->create_game_from_button_ids(
+            $playerIdArray,
+            $buttonIdArray,
+            $buttonNameArray,
+            $maxWins,
+            $description,
+            $previousGameId,
+            $currentPlayerId,
+            $autoAccept,
+            $customRecipeArray,
+            $tournamentId,
+            $tournamentRoundNumber
+        );
+
+        return $result;
+    }
+
+    public function create_game_from_button_ids(
+        array $playerIdArray,
+        array $buttonIdArray,
+        array $buttonNameArray,
+        $maxWins = 3,
+        $description = '',
+        $previousGameId = NULL,
+        $currentPlayerId = NULL,
+        $autoAccept = TRUE,
+        $customRecipeArray = array(),
+        $tournamentId = NULL,
+        $tournamentRoundNumber = NULL
+    ) {
         try {
             if (!isset($currentPlayerId)) {
                 throw new LogicException(
@@ -79,8 +114,8 @@ class BMInterfaceGame extends BMInterface {
                     $hasAcceptedGame
                 );
             }
-            $this->set_random_button_flags($gameId, $buttonNameArray);
 
+            $this->set_random_button_flags($gameId, $buttonIdArray);
             if (!$this->set_custom_recipes($gameId, $buttonNameArray, $customRecipeArray)) {
                 return NULL;
             }
@@ -102,6 +137,10 @@ class BMInterfaceGame extends BMInterface {
             if ($previousGameId) {
                 $chatNotice = '[i]Continued from [game=' . $previousGameId . '][i]';
                 $game->add_chat(-1, $chatNotice);
+            }
+            if ($tournamentId) {
+                $game->tournamentId = $tournamentId;
+                $game->tournamentRoundNumber = $tournamentRoundNumber;
             }
             $this->save_game($game);
 
@@ -213,11 +252,11 @@ class BMInterfaceGame extends BMInterface {
      * Set flags indicating whether each button has been chosen randomly
      *
      * @param int $gameId
-     * @param array $buttonNameArray
+     * @param array $buttonIdArray
      */
-    protected function set_random_button_flags($gameId, array $buttonNameArray) {
-        foreach ($buttonNameArray as $position => $buttonName) {
-            if ('__random' == $buttonName) {
+    protected function set_random_button_flags($gameId, array $buttonIdArray) {
+        foreach ($buttonIdArray as $position => $buttonId) {
+            if (self::RANDOM_BUTTON_VALUE == $buttonId) {
                 $query = 'UPDATE game_player_map '.
                          'SET is_button_random = 1 '.
                          'WHERE game_id = :game_id '.
@@ -503,14 +542,14 @@ class BMInterfaceGame extends BMInterface {
      * @param array $buttonNameArray
      * @return array
      */
-    protected function retrieve_button_ids($playerIdArray, $buttonNameArray) {
+    public function retrieve_button_ids($playerIdArray, $buttonNameArray) {
         $buttonIdArray = array();
         foreach (array_keys($playerIdArray) as $position) {
             // get button ID
             $buttonName = $buttonNameArray[$position];
 
             if ('__random' == $buttonName) {
-                $buttonIdArray[] = NULL;
+                $buttonIdArray[] = self::RANDOM_BUTTON_VALUE;
             } elseif (!empty($buttonName)) {
                 try {
                     $query = 'SELECT id FROM button '.
@@ -1749,5 +1788,19 @@ class BMInterfaceGame extends BMInterface {
         }
 
         return $isGameStateCurrent;
+    }
+
+    public function isGameComplete($gameId) {
+        $query = 'SELECT g.game_state '.
+                 'FROM game AS g '.
+                 'WHERE g.id = :game_id;';
+        $statement = self::$conn->prepare($query);
+        $statement->execute(array(':game_id' => $gameId));
+
+        while ($row = $statement->fetch()) {
+            return ((int)$row['game_state']) >= BMGameState::END_GAME;
+        }
+
+        throw new LogicException('Cannot find game ' . $gameId);
     }
 }
