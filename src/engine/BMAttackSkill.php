@@ -297,10 +297,7 @@ class BMAttackSkill extends BMAttack {
      */
     protected function is_assisted_attack_valid($game, array $attackers, array $defenders, $dval, $helpValue) {
         if (is_null($helpValue)) {
-            $bounds = $this->help_bounds(
-                $this->collect_helpers($game, $attackers, $defenders),
-                $this->collect_firing_maxima($attackers)
-            );
+            $bounds = $this->help_bounds_specific($game, $attackers, $defenders);
         } else {
             $bounds = array($helpValue, $helpValue);
         }
@@ -309,6 +306,10 @@ class BMAttackSkill extends BMAttack {
             $this->validationMessage = 'Attacking die values do not sum up to target die value.';
             return FALSE;
         }
+
+        $firingMaxima = $this->collect_firing_maxima($attackers);
+
+
         for ($i = $bounds[0]; $i <= $bounds[1]; $i++) {
             // james: This logic assumes that firing effectively reduces the defence value.
             //        This assumption fails in the case that part of the skill sum comes
@@ -324,6 +325,7 @@ class BMAttackSkill extends BMAttack {
                 }
             }
         }
+
         $this->validationMessage = 'Attacking die values do not sum up to target die value.';
         return FALSE;
     }
