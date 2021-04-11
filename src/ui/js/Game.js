@@ -2526,7 +2526,7 @@ Game.valueCell = function(dieIdx, isPlayer) {
 
   var cellText = Game.activeDieFieldString(dieIdx, 'value', activeDieArray);
   var valueCell = $('<td>', {
-    'text': cellText,
+    'html': cellText,
   });
 
   if ('' !== cellText) {
@@ -2926,7 +2926,7 @@ Game.gamePlayerStatus = function(player, reversed, game_active) {
     }
     capturedDiceDiv = $('<div>');
     capturedDiceDiv.append($('<span>', {
-      'text': 'Dice captured: ' + capturedDieText,
+      'html': 'Dice captured: ' + capturedDieText,
     }));
 
     // Dice that are out of play, only applicable in active games
@@ -3085,7 +3085,7 @@ Game.createGameMatDieDiv = function(die, player, dieStatus, isClickable) {
     'class': 'die_overlay die_number_' + player,
   };
   if (dieStatus == 'active') {
-    dieNumberSpanOpts.text = die.value;
+    dieNumberSpanOpts.html = die.value;
   } else {
     dieNumberSpanOpts.html = '&nbsp;' + die.value + '&nbsp;';
   }
@@ -3453,7 +3453,10 @@ Game.playerOpponentHeaderRow = function(label, field) {
 // number of sides
 Game.dieRecipeText = function(die, allowShowValues) {
   var dieRecipeText = die.recipe;
-  if (die.sides !== undefined && die.sides !== null) {
+  if ((die.sides !== undefined) &&
+      (die.sides !== null) &&
+      (die.recipe !== undefined) &&
+      (die.recipe.indexOf('(C)') == -1)) {
     var lparen = die.recipe.indexOf('(');
     var rparen = die.recipe.indexOf(')');
     var recipeSideString = die.recipe.substring(lparen + 1, rparen);

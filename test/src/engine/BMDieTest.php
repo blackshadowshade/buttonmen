@@ -171,7 +171,7 @@ class BMDieTest extends PHPUnit_Framework_TestCase {
         }
 
         try {
-            $die = BMDie::create_from_recipe('(9.0)', TRUE);
+            $die = BMDie::create_from_recipe('(9.5)', TRUE);
             $this->fail('Creating decimal die did not throw an exception.');
         } catch (BMExceptionDieRecipe $e) {
 

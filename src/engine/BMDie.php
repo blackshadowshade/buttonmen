@@ -207,11 +207,10 @@ class BMDie extends BMCanHaveSkill {
                 $twinArray = explode(',', $recipe);
                 $die = BMDieTwin::create($twinArray, $skills);
             } elseif ('C' == $recipe) {
-//                $die = BMDieWildcard::create($recipe, $skills);
-                throw new BMExceptionUnimplementedDie('Wildcard skill not implemented');
-            } elseif (is_numeric($recipe)) {
-                // Deal with dice with numeric values, which will mostly be integers
-                $die = BMDie::create($recipe, $skills);
+                $die = BMDieWildcard::create(NULL, $skills);
+            } elseif (is_numeric($recipe) && ($recipe == (int)$recipe)) {
+                // Integers are normal dice
+                $die = BMDie::create((int)$recipe, $skills);
             } elseif (strlen($recipe) == 1) {
                 // Single character that's not a number is a swing die
                 $die = BMDieSwing::create($recipe, $skills);
@@ -411,11 +410,18 @@ class BMDie extends BMCanHaveSkill {
         if ($turboDieIsAboutToBeReplaced) {
             $this->value = NULL;
         } elseif ($needsToReroll) {
-            $this->set__value(bm_rand($this->min, $this->max));
+            $this->select_new_value();
         }
 
         $this->run_hooks('post_roll', array('die' => $this,
                                             'isTriggeredByAttack' => $isTriggeredByAttack));
+    }
+
+    /**
+     * Select a new value
+     */
+    protected function select_new_value() {
+        $this->set__value(bm_rand($this->min, $this->max));
     }
 
     /**
@@ -457,7 +463,7 @@ class BMDie extends BMCanHaveSkill {
      * @return int
      */
     public function get_scoreValueTimesTen() {
-        $scoreValue = $this->max;
+        $scoreValue = $this->get_raw_score_value();
 
         $mult = 1;
         if ($this->captured) {
@@ -480,6 +486,15 @@ class BMDie extends BMCanHaveSkill {
         } else {
             return (10 * $scoreValue * $mult) / $div;
         }
+    }
+
+    /**
+     * Get the base score value of the die before applying any adjustments
+     *
+     * @return int
+     */
+    protected function get_raw_score_value() {
+        return $this->max;
     }
 
     /**
@@ -687,9 +702,18 @@ class BMDie extends BMCanHaveSkill {
             $valueStr = " showing {$this->value}";
         }
 
-        $result = "{$skillStr}{$this->max}-sided die{$valueStr}";
+        $result = "{$skillStr}{$this->die_size_string()}{$valueStr}";
 
         return $result;
+    }
+
+    /**
+     * Description of die size
+     *
+     * @return string
+     */
+    protected function die_size_string() {
+        return "{$this->max}-sided die";
     }
 
     /**
@@ -897,7 +921,7 @@ class BMDie extends BMCanHaveSkill {
             $value = NULL;
             $recipeStatus = $recipe;
         } else {
-            $value = $this->value;
+            $value = $this->displayed_value(FALSE);
             $recipeStatus = $recipe . ':' . $value;
         }
 
@@ -1113,6 +1137,10 @@ class BMDie extends BMCanHaveSkill {
     public function getDieTypes() {
         $typesList = array();
         return $typesList;
+    }
+
+    public function displayed_value() {
+        return $this->value;
     }
 
     /**

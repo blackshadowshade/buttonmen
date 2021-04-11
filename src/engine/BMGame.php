@@ -3812,7 +3812,7 @@ class BMGame {
         if (!empty($this->playerArray[$playerIdx]->capturedDieArray)) {
             foreach ($this->playerArray[$playerIdx]->capturedDieArray as $dieIdx => $die) {
                 $capturedDieArray[$dieIdx] = array(
-                    'value' => $die->value,
+                    'value' => $die->displayed_value(TRUE),
                     'sides' => $die->max,
                     'recipe' => $die->recipe,
                     'properties' => $this->get_dieProps($die),
@@ -3844,7 +3844,7 @@ class BMGame {
         if (!empty($this->playerArray[$playerIdx]->outOfPlayDieArray)) {
             foreach ($this->playerArray[$playerIdx]->outOfPlayDieArray as $dieIdx => $die) {
                 $outOfPlayDieArray[] = array(
-                    'value' => $die->value,
+                    'value' => $die->displayed_value(TRUE),
                     'sides' => $die->max,
                     'recipe' => $die->recipe,
                     'properties' => $this->get_dieProps($die),
@@ -3878,11 +3878,12 @@ class BMGame {
                 if (is_null($die->max)) {
                     $swingValsSpecified = FALSE;
                 }
-
                 if ($this->shouldDieDataBeHidden($playerIdx, $requestingPlayerIdx)) {
-                    $die->value = NULL;
+                    $dieValue = NULL;
+                } else {
+                    $dieValue = $die->displayed_value(TRUE);
                 }
-                $valueArrayArray[$playerIdx][$dieIdx] = $die->value;
+                $valueArrayArray[$playerIdx][$dieIdx] = $dieValue;
             }
         }
 
@@ -4379,12 +4380,17 @@ class BMGame {
         $gameSkillsWithKeysList = array();
         $gameBtnSkillsWithKeysList = array();
 
+        $doesContainWildcard = FALSE;
+
         foreach ($this->playerArray as $player) {
             if (!is_null($player->button)) {
                 $gameBtnSkillsWithKeysList += $player->button->skillList;
 
                 if (!empty($player->button->dieArray)) {
                     foreach ($player->button->dieArray as $buttonDie) {
+                        if ($buttonDie instanceof BMDieWildcard) {
+                            $doesContainWildcard = TRUE;
+                        }
                         if (count($buttonDie->skillList) > 0) {
                             $gameSkillsWithKeysList += $buttonDie->skillList;
                         }
@@ -4412,6 +4418,14 @@ class BMGame {
             foreach ($gameSkillsList as $skillType) {
                 $gameSkillsInfo[$skillType] = BMSkill::describe($skillType, $gameSkillsList);
             }
+        }
+
+        if ($doesContainWildcard) {
+            $gameSkillsInfo['Wildcard'] = array(
+                'code' => 'C',
+                'description' => BMDieWildcard::getDescription(),
+                'interacts' => array()
+            );
         }
 
         return $gameSkillsInfo;

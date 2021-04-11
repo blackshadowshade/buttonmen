@@ -550,6 +550,10 @@ class responderTestFramework extends PHPUnit_Framework_TestCase {
                 'name' => 'Option',
                 'description' => 'Option Dice are represented as two numbers with a slash between them, resembling a fraction. They function like Swing Dice and can be changed at any time a Swing Die could be changed. However, Option Dice are restricted to only two values. For example, a 4/10 Option Die can be only a 4 or a 10.',
             ),
+            '(C)' => array(
+                'name' => 'Wildcard',
+                'description' => 'A Wildcard die is not rolled. Instead, a card is drawn from a deck of playing cards with two jokers. The value of the Wildcard die is the value of the card, where Jack, Queen, King, and Joker have a value of 11, 12, 13, and 20, respectively. A Wildcard die showing an Ace has a value of 1 except when the Wildcard die is performing a Power attack, when it can attack as if it had a value of 14. A Wildcard die is scored as if it were a 16-sided die. All active Wildcard dice owned by a player share the same deck. Cards are drawn without replacement, and the deck is only shuffled during a game if it is exhausted. Wildcard dice do not split, shrink, or grow.',
+            ),
         );
 
         return $typeInfo;

@@ -457,6 +457,18 @@ span.prefs_desc {
     cursor: default;
 }
 
+span.suit_black {
+    color: black;
+}
+
+.die_container_dead span.suit_black {
+    color: white;
+}
+
+span.suit_red {
+    color: red;
+}
+
 span.info_icon {
     color: white;
     background: #000080;
