@@ -304,7 +304,7 @@ Tournament.pageAddTournamentDescription = function () {
   if (Api.tournament.description) {
     Tournament.page.append($('<div>', {
       'id': 'tournament_desc',
-      'html': Env.applyBbCodeToHtml(Api.tournament.description),
+      'html': Env.prepareRawTextForDisplay(Api.tournament.description),
       'class': 'gameDescDisplay',
     }));
   }
